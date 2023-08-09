@@ -1,0 +1,123 @@
+[
+  {
+    "blockHash": "0xfcd1cda40f542c42a3bdfa0eac4c1f17486e3d3fb444186c0538b6d33b4b2a6a",
+    "parentHash": "0x347bcc7e0675de459a76588f7f26f7c7f099f7243a47ff6cbbd3ce21042cd1dd",
+    "blockHeight": 17875369,
+    "timeStamp": 1691560211,
+    "baseFeePerGas": 12776255077,
+    "difficulty": 0,
+    "logsBloom": "0xdd7d22cdd599d1efd1bae069c210756bf8e1c1a92c762afe3299eab276922590efe5816947d1a1f0f4183b1e2a1c73c42f9740dabc252db49c1b03b7977ce42668cf8179c518e9e9b807eabee29491aca034a6c5407d2d7e10bc67efe8f003415bcf2b5efa0a2a01c3a5b5d9cd18fa57d3b1ce24a829ec8c46504618bc59f8be36aecf7492a27cc26d7db2ec8e668333d0088427bbf5cc7ce0b192cf0d9f60aa8b6085c3ebb76f56e6eeeaed1eff2fa0a7c245ea7bbbe9b20a330b72757ffbf5539a15aacf403852cd24563615ffb38d20bf8232c9ada23521d6c48e3857faf375b1fd5d9cc924f453cd3fa038c2fa6ad52a59f6db0c4776317755c17b4837bb",
+    "miner": "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5",
+    "mixHash": "0x636d9af58f20bb469adbeaf87bbecbc5bcc28938aa7f43d8b1122036360545dc",
+    "nonce": "0x0000000000000000",
+    "receiptsRoot": "0x1f992647eb36de4ddeae55e6183c75970a6ccff556a35eec6545322c0e54f138",
+    "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+    "size": 182947,
+    "stateRoot": "0xf263842c7e75b32de10179c9e3f8a457ddaa04a7d37e19b8c20fecf2e9e86fd6",
+    "totalDifficulty": 58750003716598352816469,
+    "transactionsRoot": "0x7ce9367d65a9563d42ed45e6a429f952c5499101d8cd2fef4a7d7056aefb7e92",
+    "uncles": [],
+    "withdrawals": [
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14919662,
+        "index": 13446817,
+        "validatorIndex": 779354
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14902221,
+        "index": 13446818,
+        "validatorIndex": 779355
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14916725,
+        "index": 13446819,
+        "validatorIndex": 779356
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14964173,
+        "index": 13446820,
+        "validatorIndex": 779357
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14967362,
+        "index": 13446821,
+        "validatorIndex": 779358
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14986934,
+        "index": 13446822,
+        "validatorIndex": 779359
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14924604,
+        "index": 13446823,
+        "validatorIndex": 779360
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 52274931,
+        "index": 13446824,
+        "validatorIndex": 779361
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14978130,
+        "index": 13446825,
+        "validatorIndex": 779362
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14955829,
+        "index": 13446826,
+        "validatorIndex": 779363
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14905418,
+        "index": 13446827,
+        "validatorIndex": 779364
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14957902,
+        "index": 13446828,
+        "validatorIndex": 779365
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14964159,
+        "index": 13446829,
+        "validatorIndex": 779366
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14958950,
+        "index": 13446830,
+        "validatorIndex": 779367
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14958707,
+        "index": 13446831,
+        "validatorIndex": 779368
+      },
+      {
+        "address": "0x56d84b7DA6DDFB933c36D69DbbA1E589CB8BeaE3",
+        "amount": 14958660,
+        "index": 13446832,
+        "validatorIndex": 779369
+      }
+    ],
+    "withdrawalsRoot": "0xfb40118f17a73fa25f8a8d39f29ced0c95c036e1b09a985add3cdfd2c4e119e8",
+    "gasLimit": 30000000,
+    "gasUsed": 18217621,
+    "extraData": "0x6265617665726275696c642e6f7267"
+  }
+]
