@@ -3,51 +3,186 @@ import sqlite3
 
 app = Flask(__name__)
 
-# SQLite database connection
-db_connection = sqlite3.connect('op_data.db')
-db_cursor = db_connection.cursor()
+# Define your SQLite database path
+DB_PATH = 'op_data.db'
 
-# Gas Usage Tracker
-@app.route('/gas_usage', methods=['GET'])
-def gas_usage_tracker():
-    db_cursor.execute('SELECT blockHeight, gasUsed FROM Blocks ORDER BY blockHeight;')
-    data = [{'blockHeight': row[0], 'gasUsed': row[1]} for row in db_cursor.fetchall()]
-    return jsonify(data)
+# Route for Latest Blocks
+@app.route('/latest_blocks')
+def latest_blocks():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
 
-# Transaction Volume Tracker
-@app.route('/transaction_volume', methods=['GET'])
-def transaction_volume_tracker():
-    db_cursor.execute('SELECT blockHeight, COUNT(*) AS transactionCount FROM Transactions GROUP BY blockHeight ORDER BY blockHeight;')
-    data = [{'blockHeight': row[0], 'transactionCount': row[1]} for row in db_cursor.fetchall()]
-    return jsonify(data)
+    query = '''
+        SELECT blockHeight, timeStamp, (SELECT COUNT(*) FROM Transactions WHERE Transactions.blockHash = Blocks.blockHash) AS transactionCount
+        FROM Blocks
+        ORDER BY blockHeight DESC
+        LIMIT 10;
+    '''
 
-# Gas Price Tracker
-@app.route('/gas_price', methods=['GET'])
-def gas_price_tracker():
-    db_cursor.execute('SELECT blockHeight, baseFeePerGas FROM Blocks ORDER BY blockHeight;')
-    data = [{'blockHeight': row[0], 'baseFeePerGas': row[1]} for row in db_cursor.fetchall()]
-    return jsonify(data)
+    cursor.execute(query)
+    results = cursor.fetchall()
 
-# Gas Efficiency Tracker
-@app.route('/gas_efficiency', methods=['GET'])
-def gas_efficiency_tracker():
-    db_cursor.execute('SELECT t.blockHeight, t.transactionHash, t.gasUsed, t.value, (t.gasUsed * 1.0 / t.value) AS gasEfficiency FROM Transactions t JOIN Blocks b ON t.blockHash = b.blockHash ORDER BY t.blockHeight;')
-    data = [{'blockHeight': row[0], 'transactionHash': row[1], 'gasUsed': row[2], 'value': row[3], 'gasEfficiency': row[4]} for row in db_cursor.fetchall()]
-    return jsonify(data)
+    conn.close()
 
-# Block Time Analysis
-@app.route('/block_time', methods=['GET'])
-def block_time_analysis():
-    db_cursor.execute('SELECT b1.blockHeight, b1.timeStamp AS currentTime, b2.timeStamp AS previousTime, (b1.timeStamp - b2.timeStamp) AS blockTime FROM Blocks b1 LEFT JOIN Blocks b2 ON b1.blockHeight = b2.blockHeight + 1 ORDER BY b1.blockHeight;')
-    data = [{'blockHeight': row[0], 'currentTime': row[1], 'previousTime': row[2], 'blockTime': row[3]} for row in db_cursor.fetchall()]
-    return jsonify(data)
+    json_results = [
+        {
+            "blockHeight": row[0],
+            "timeStamp": row[1],
+            "transactionCount": row[2]
+        }
+        for row in results
+    ]
 
-# Withdrawal Patterns Tracker
-@app.route('/withdrawal_patterns', methods=['GET'])
-def withdrawal_patterns_tracker():
-    db_cursor.execute('SELECT address, COUNT(*) AS withdrawalCount, SUM(amount) AS totalWithdrawn FROM Withdrawals GROUP BY address ORDER BY totalWithdrawn DESC;')
-    data = [{'address': row[0], 'withdrawalCount': row[1], 'totalWithdrawn': row[2]} for row in db_cursor.fetchall()]
-    return jsonify(data)
+    return jsonify(json_results)
+# Route for Latest Transactions
+@app.route('/latest_transactions')
+def latest_transactions():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT transactionHash, fromAddress, toAddress, value
+        FROM Transactions
+        ORDER BY blockHeight DESC, transactionIndex DESC
+        LIMIT 10;
+    '''
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    conn.close()
+
+    json_results = [
+        {
+            "transactionHash": row[0],
+            "fromAddress": row[1],
+            "toAddress": row[2],
+            "value": row[3]
+        }
+        for row in results
+    ]
+
+    return jsonify(json_results)
+
+# Route for Transaction Volume
+@app.route('/transaction_volume')
+def transaction_volume():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT COUNT(*) AS transactionCount
+        FROM Transactions;
+    '''
+
+    cursor.execute(query)
+    result = cursor.fetchone()[0]
+
+    conn.close()
+
+    return jsonify({"transactionCount": result})
+
+# Route for Gas Price Trends
+@app.route('/gas_price_trends')
+def gas_price_trends():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT timeStamp, baseFeePerGas
+        FROM Blocks
+        ORDER BY blockHeight DESC
+        LIMIT 30;
+    '''
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    conn.close()
+
+    json_results = [
+        {
+            "timeStamp": row[0],
+            "baseFeePerGas": row[1]
+        }
+        for row in results
+    ]
+
+    return jsonify(json_results)
+
+# Route for Network Activity Chart
+@app.route('/network_activity_chart')
+def network_activity_chart():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT blockHeight, (SELECT COUNT(*) FROM Transactions WHERE Transactions.blockHash = Blocks.blockHash) AS transactionCount
+        FROM Blocks
+        ORDER BY blockHeight;
+    '''
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    conn.close()
+    return jsonify(results)
+
+# Route for Average Block Time
+@app.route('/average_block_time')
+def average_block_time():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT blockHeight, timeStamp, LAG(timeStamp) OVER (ORDER BY blockHeight) AS prevTimeStamp
+        FROM Blocks
+        ORDER BY blockHeight;
+    '''
+
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    average_block_time = sum(rows[i][1] - rows[i][2] for i in range(1, len(rows))) / (len(rows) - 1)
+    
+    conn.close()
+    return jsonify({'averageBlockTime': average_block_time})
+
+# Route for Gas Efficiency Trends
+@app.route('/gas_efficiency_trends')
+def gas_efficiency_trends():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT blockHeight, gasEfficiency
+        FROM GasEfficiencyTrends  -- Update with your actual table name
+        ORDER BY blockHeight;
+    '''
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    conn.close()
+    return jsonify(results)
+
+# Route for Gas Used vs. Gas Limit
+@app.route('/gas_used_vs_gas_limit')
+def gas_used_vs_gas_limit():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT blockHeight, gasUsed, gasLimit
+        FROM Blocks
+        ORDER BY blockHeight;
+    '''
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    conn.close()
+    return jsonify(results)
 
 if __name__ == '__main__':
     app.run(debug=True)
