@@ -17,7 +17,7 @@ provider = Web3(Web3.HTTPProvider(rpcUrl))
 def classify_transaction(input_data, to_address, value):
     # Check if the 'to' field is None or an Ethereum address (transfer)
     if to_address is None or to_address == "0x":
-        if int(value, 16) > 0:  # Non-zero value indicates Ether transfer
+        if value > 0:  # Non-zero value indicates Ether transfer
             return "Ether Transfer"
         else:
             return "Unknown"  # No value indicates unknown transaction type
@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS Transactions (
 conn.commit()
 
 async def fetch_and_store_blocks(start_block, end_block):
+
     for block_number in range(start_block, end_block + 1):
         print("On block ------------", block_number - start_block)
         block = provider.eth.get_block(block_number)
@@ -113,7 +114,7 @@ async def fetch_and_store_blocks(start_block, end_block):
 
         for txn_hash in block['transactions']:
             tx_data = provider.eth.get_transaction(txn_hash)
-            classified_type = classify_transaction(tx_data['input'].hex(), tx_data['to'], tx_data['value'])
+            classified_type = classify_transaction(tx_data.get('input', None).hex() if 'input' in tx_data else None, tx_data.get('to',None), tx_data.get('value',None))
             tx_details_with_type = {
                 **tx_data,  # Copy all existing fields from tx_data
                 'classifiedType': classified_type  # Add the classifiedType field
@@ -172,7 +173,7 @@ async def main():
     latest_block_number = provider.eth.block_number
     start_block = max(0, latest_block_number - 50000)  # Fetch last 50000 blocks
     end_block = latest_block_number
-    await fetch_and_store_blocks(start_block, end_block)
+    await fetch_and_store_blocks(107974753, 107974753 + 500000)
 
 if __name__ == "__main__":
     asyncio.run(main())

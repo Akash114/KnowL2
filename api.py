@@ -1,10 +1,16 @@
 from flask import Flask, jsonify
 import sqlite3
+from flask_cors import CORS
+import datetime
+import numpy as np
+
 
 app = Flask(__name__)
 
 # Define your SQLite database path
 DB_PATH = 'op_data.db'
+
+cors = CORS(app)
 
 # Route for Latest Blocks
 @app.route('/latest_blocks')
@@ -13,10 +19,12 @@ def latest_blocks():
     cursor = conn.cursor()
 
     query = '''
-        SELECT blockHeight, timeStamp, (SELECT COUNT(*) FROM Transactions WHERE Transactions.blockHash = Blocks.blockHash) AS transactionCount
-        FROM Blocks
-        ORDER BY blockHeight DESC
-        LIMIT 10;
+        SELECT B.blockHeight, B.timeStamp, T.transactionHash, B.miner, B.gasUsed, COUNT(T.transactionHash) AS transactionCount
+        FROM Blocks B
+        LEFT JOIN Transactions T ON B.blockHash = T.blockHash
+        GROUP BY B.blockHeight
+        ORDER BY B.blockHeight DESC
+        LIMIT 5;
     '''
 
     cursor.execute(query)
@@ -28,12 +36,16 @@ def latest_blocks():
         {
             "blockHeight": row[0],
             "timeStamp": row[1],
-            "transactionCount": row[2]
+            "transactionHash": row[2],
+            "miner": row[3],
+            "gasUsed": row[4],
+            "transactionCount": row[5]
         }
         for row in results
     ]
 
     return jsonify(json_results)
+
 # Route for Latest Transactions
 @app.route('/latest_transactions')
 def latest_transactions():
@@ -41,10 +53,11 @@ def latest_transactions():
     cursor = conn.cursor()
 
     query = '''
-        SELECT transactionHash, fromAddress, toAddress, value
-        FROM Transactions
-        ORDER BY blockHeight DESC, transactionIndex DESC
-        LIMIT 10;
+        SELECT T.transactionHash, T.fromAddress, T.toAddress, T.value, B.blockHeight
+        FROM Transactions T
+        JOIN Blocks B ON T.blockHash = B.blockHash
+        ORDER BY B.blockHeight DESC, T.transactionIndex DESC
+        LIMIT 5;
     '''
 
     cursor.execute(query)
@@ -57,30 +70,65 @@ def latest_transactions():
             "transactionHash": row[0],
             "fromAddress": row[1],
             "toAddress": row[2],
-            "value": row[3]
+            "value": row[3],
+            "blockHeight": row[4]
         }
         for row in results
     ]
 
     return jsonify(json_results)
 
-# Route for Transaction Volume
-@app.route('/transaction_volume')
-def transaction_volume():
+# Route for Key Metrics
+@app.route('/key_metrics')
+def key_metrics():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    query = '''
+    # Calculate Average Block Time
+    avg_block_time_query = '''
+        SELECT AVG(blockInterval) AS avgBlockTime
+        FROM (
+            SELECT timeStamp - LAG(timeStamp) OVER (ORDER BY blockHeight) AS blockInterval
+            FROM Blocks
+        );
+    '''
+    cursor.execute(avg_block_time_query)
+    avg_block_time = cursor.fetchone()[0]
+
+    # Calculate Transaction Volume
+    transaction_volume_query = '''
         SELECT COUNT(*) AS transactionCount
         FROM Transactions;
     '''
+    cursor.execute(transaction_volume_query)
+    transaction_volume = cursor.fetchone()[0]
 
-    cursor.execute(query)
-    result = cursor.fetchone()[0]
+    # Get Latest Block Number
+    latest_block_number_query = '''
+        SELECT MAX(blockHeight) AS latestBlockNumber
+        FROM Blocks;
+    '''
+    cursor.execute(latest_block_number_query)
+    latest_block_number = cursor.fetchone()[0]
+
+    # Calculate Block Volume (Number of Blocks)
+    block_volume_query = '''
+        SELECT COUNT(*) AS blockCount
+        FROM Blocks;
+    '''
+    cursor.execute(block_volume_query)
+    block_volume = cursor.fetchone()[0]
 
     conn.close()
 
-    return jsonify({"transactionCount": result})
+    key_metrics_data = {
+        "avgBlockTime": avg_block_time,
+        "transactionVolume": transaction_volume,
+        "latestBlockNumber": latest_block_number,
+        "blockVolume": block_volume
+    }
+
+    return jsonify(key_metrics_data)
 
 # Route for Gas Price Trends
 @app.route('/gas_price_trends')
@@ -88,10 +136,51 @@ def gas_price_trends():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
+    # Group by 5-minute intervals and calculate average gas price and total transactions
     query = '''
-        SELECT timeStamp, baseFeePerGas
-        FROM Blocks
-        ORDER BY blockHeight DESC
+        SELECT 
+            STRFTIME('%Y-%m-%d %H:%M:%S', (B.timeStamp / 300) * 180, 'unixepoch') AS timeInterval,
+            AVG(B.baseFeePerGas) AS avgGasPrice,
+            COUNT(T.transactionHash) AS totalTransactionCount
+        FROM Blocks AS B
+        LEFT JOIN Transactions AS T ON B.blockHash = T.blockHash
+        GROUP BY timeInterval
+        ORDER BY timeInterval DESC
+        LIMIT 50;
+    '''
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    conn.close()
+
+    json_results = [
+        {
+            "timeInterval": row[0],
+            "avgGasPrice": row[1],
+            "totalTransactionCount": row[2]
+        }
+        for row in results
+    ]
+
+    return jsonify(json_results)
+
+
+# Route for Gas Efficiency Trends
+@app.route('/gas_efficiency_trends')
+def gas_efficiency_trends():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Group by 5-minute intervals and calculate average gas used and gas limit
+    query = '''
+        SELECT 
+            STRFTIME('%Y-%m-%d %H:%M:%S', (B.timeStamp / 300) * 300, 'unixepoch') AS timeInterval,
+            AVG(B.gasUsed) AS avgGasUsed,
+            AVG(B.gasLimit) AS avgGasLimit
+        FROM Blocks AS B
+        GROUP BY timeInterval
+        ORDER BY timeInterval DESC
         LIMIT 30;
     '''
 
@@ -102,87 +191,88 @@ def gas_price_trends():
 
     json_results = [
         {
-            "timeStamp": row[0],
-            "baseFeePerGas": row[1]
+            "timeInterval": row[0],
+            "avgGasUsed": row[1],
+            "avgGasLimit": row[2]
         }
         for row in results
     ]
 
     return jsonify(json_results)
 
-# Route for Network Activity Chart
-@app.route('/network_activity_chart')
-def network_activity_chart():
+
+# Route for Gas Efficiency vs. Value Transferred
+@app.route('/gas_efficiency_value_transferred')
+def gas_efficiency_value_transferred():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
+    # Retrieve data for gas efficiency vs. value transferred
     query = '''
-        SELECT blockHeight, (SELECT COUNT(*) FROM Transactions WHERE Transactions.blockHash = Blocks.blockHash) AS transactionCount
-        FROM Blocks
-        ORDER BY blockHeight;
+        SELECT 
+            B.gasUsed,
+            T.value,
+            T.gasPrice
+        FROM Transactions AS T
+        JOIN Blocks AS B ON T.blockHash = B.blockHash
+        WHERE T.value > 0
+        LIMIT 1000;  -- Limit to the first 1000 records for example
     '''
 
     cursor.execute(query)
     results = cursor.fetchall()
 
     conn.close()
-    return jsonify(results)
 
-# Route for Average Block Time
-@app.route('/average_block_time')
-def average_block_time():
+    json_results = [
+        {
+            "gasUsed": row[0],
+            "valueTransferred": row[1],
+            "gasPrice": row[2]
+        }
+        for row in results
+    ]
+
+    return jsonify(json_results)
+
+
+# Route for Gas Price Heatmap
+@app.route('/gas_price_heatmap')
+def gas_price_heatmap():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
+    # Retrieve data for gas price heatmap
     query = '''
-        SELECT blockHeight, timeStamp, LAG(timeStamp) OVER (ORDER BY blockHeight) AS prevTimeStamp
-        FROM Blocks
-        ORDER BY blockHeight;
-    '''
-
-    cursor.execute(query)
-    rows = cursor.fetchall()
-
-    average_block_time = sum(rows[i][1] - rows[i][2] for i in range(1, len(rows))) / (len(rows) - 1)
-    
-    conn.close()
-    return jsonify({'averageBlockTime': average_block_time})
-
-# Route for Gas Efficiency Trends
-@app.route('/gas_efficiency_trends')
-def gas_efficiency_trends():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    query = '''
-        SELECT blockHeight, gasEfficiency
-        FROM GasEfficiencyTrends  -- Update with your actual table name
-        ORDER BY blockHeight;
+        SELECT 
+            STRFTIME('%w', B.timeStamp, 'unixepoch') AS dayOfWeek,
+            STRFTIME('%H', B.timeStamp, 'unixepoch') AS hourOfDay,
+            AVG(T.gasPrice) AS avgGasPrice
+        FROM Transactions AS T
+        JOIN Blocks AS B ON T.blockHash = B.blockHash
+        GROUP BY dayOfWeek, hourOfDay
     '''
 
     cursor.execute(query)
     results = cursor.fetchall()
 
     conn.close()
-    return jsonify(results)
 
-# Route for Gas Used vs. Gas Limit
-@app.route('/gas_used_vs_gas_limit')
-def gas_used_vs_gas_limit():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    heatmap = np.zeros((7, 24))
+    for row in results:
+        day = int(row[0])
+        hour = int(row[1])
+        avg_gas_price = row[2]
+        heatmap[day][hour] = avg_gas_price
 
-    query = '''
-        SELECT blockHeight, gasUsed, gasLimit
-        FROM Blocks
-        ORDER BY blockHeight;
-    '''
+    json_results = {
+        "heatmap": heatmap.tolist(),
+        "daysOfWeek": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "hoursOfDay": list(range(24))
+    }
 
-    cursor.execute(query)
-    results = cursor.fetchall()
+    return jsonify(json_results)
 
-    conn.close()
-    return jsonify(results)
 
 if __name__ == '__main__':
     app.run(debug=True)
