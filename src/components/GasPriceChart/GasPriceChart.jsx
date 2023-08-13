@@ -11,17 +11,26 @@ class GasPriceChart extends Component {
 
     const { gasPriceData } = this.props;
 
-    const labels = gasPriceData.map(entry => entry.timeStamp);
-    const data = gasPriceData.map(entry => entry.baseFeePerGas);
+    const labels = gasPriceData.map(entry => entry.timeInterval);
+    const avgGasPrices = gasPriceData.map(entry => entry.avgGasPrice);
+    const totalTransactionCounts = gasPriceData.map(entry => entry.totalTransactionCount);
 
     const chartData = {
       labels: labels,
       datasets: [
         {
-          label: "Gas Price Trends",
-          data: data,
+          label: "Average Gas Price",
+          data: avgGasPrices,
           fill: false,
           borderColor: "rgba(29, 111, 165, 1)",
+          yAxisID: "y-axis-avg-gas",
+        },
+        {
+          label: "Total Transaction Count",
+          data: totalTransactionCounts,
+          fill: false,
+          borderColor: "rgba(255, 99, 132, 1)",
+          yAxisID: "y-axis-total-transactions",
         },
       ],
     };
@@ -31,20 +40,55 @@ class GasPriceChart extends Component {
         x: {
           type: "time",
           time: {
-            unit: "second",
+            unit: "minute",
             displayFormats: {
-              second: "HH:mm:ss",
+              minute: "HH:mm",
             },
           },
           title: {
             display: true,
-            text: "Timestamp",
+            text: "Time Interval",
           },
         },
-        y: {
-          title: {
-            display: true,
-            text: "Base Fee Per Gas",
+        yAxes: [
+          {
+            id: "y-axis-avg-gas",
+            type: "linear",
+            position: "left",
+            title: {
+              display: true,
+              text: "Average Gas Price",
+            },
+            ticks: {
+              beginAtZero: true,
+            },
+          },
+          {
+            id: "y-axis-total-transactions",
+            type: "linear",
+            position: "right",
+            title: {
+              display: true,
+              text: "Total Transaction Count",
+            },
+            ticks: {
+              beginAtZero: true,
+            },
+          },
+        ],
+      },
+      tooltips: {
+        mode: "index",
+        intersect: false,
+        callbacks: {
+          label: function(context) {
+            const labelIndex = context.dataIndex;
+            const avgGasPrice = context.dataset.data[labelIndex];
+            const totalTransactionCount = totalTransactionCounts[labelIndex];
+            return [
+              `Avg Gas Price: ${avgGasPrice.toFixed(2)}`,
+              `Total Transactions: ${totalTransactionCount}`,
+            ];
           },
         },
       },

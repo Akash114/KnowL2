@@ -5,6 +5,8 @@ import { Card, Grid, Icon } from "semantic-ui-react";
 import LatestBlocks from "../Latest-Blocks/index";
 import LatestTxs from "../Latest-Txs/index";
 import GasPriceChart from "../GasPriceChart/index"; // Update the path to your GasPriceChart component
+import GasEfficiencyChart from "../GasEfficiencyChart/index"; // Update the path to your GasPriceChart component
+
 
 class EthOverview extends Component {
   constructor() {
@@ -15,7 +17,7 @@ class EthOverview extends Component {
       latestBlockNumber: 0,
       transactionVolume: 0,
       gasPriceData: [],
-
+      gasEfficiencyData: [],
     };
   }
 
@@ -39,6 +41,15 @@ class EthOverview extends Component {
       console.error("Error fetching gas price data:", error);
     }
 
+    try {
+      const response = await axios.get("http://127.0.0.1:5000/gas_efficiency_trends");
+      const gasEfficiencyData = response.data;
+      this.setState({ gasEfficiencyData });
+    } catch (error) {
+      console.error("Error fetching gas efficiency data:", error);
+    }
+
+
   }
 
   render() {
@@ -48,6 +59,7 @@ class EthOverview extends Component {
       latestBlockNumber,
       transactionVolume,
       gasPriceData,
+      gasEfficiencyData
     } = this.state;
     return (
       <div>
@@ -104,8 +116,8 @@ class EthOverview extends Component {
           </Grid.Row>
         </Grid>
 
-                {/* Render the GasPriceChart component here */}
                 <GasPriceChart gasPriceData={gasPriceData} />
+                {/* <GasEfficiencyChart gasEfficiencyData={gasEfficiencyData} /> */}
 
 
         <Grid divided="vertically">
