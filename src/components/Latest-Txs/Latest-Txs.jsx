@@ -16,7 +16,7 @@ class LatestTxs extends Component {
 
   getTxs = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/latest_transactions");
+      const response = await axios.get("https://know-l2.vercel.app/latest_transactions");
       const transactions = response.data;
 
       const txsDetails = transactions.map((tx, index) => (

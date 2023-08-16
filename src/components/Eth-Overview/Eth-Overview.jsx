@@ -23,7 +23,7 @@ class EthOverview extends Component {
 
   async componentDidMount() {
     // Fetch key metrics data
-    const keyMetrics = await axios.get("http://127.0.0.1:5000/key_metrics");
+    const keyMetrics = await axios.get("https://know-l2.vercel.app/key_metrics");
     const metricsData = keyMetrics.data;
 
     this.setState({
@@ -34,7 +34,7 @@ class EthOverview extends Component {
     });
 
     try {
-      const response = await axios.get("http://127.0.0.1:5000/gas_price_trends");
+      const response = await axios.get("https://know-l2.vercel.app/gas_price_trends");
       const gasPriceData = response.data;
       this.setState({ gasPriceData });
     } catch (error) {
@@ -42,7 +42,7 @@ class EthOverview extends Component {
     }
 
     try {
-      const response = await axios.get("http://127.0.0.1:5000/gas_efficiency_trends");
+      const response = await axios.get("https://know-l2.vercel.app/gas_efficiency_trends");
       const gasEfficiencyData = response.data;
       this.setState({ gasEfficiencyData });
     } catch (error) {

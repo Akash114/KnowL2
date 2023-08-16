@@ -16,7 +16,7 @@ class LatestBlocks extends Component {
 
   getBlocks = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/latest_blocks");
+      const response = await axios.get("https://know-l2.vercel.app/latest_blocks");
       const blocks = response.data;
 
       const blockRows = blocks.map((block, index) => (
